@@ -192,4 +192,20 @@ const loginUser = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, verifyMail, resendOTP };
+// Add this to your backend (e.g., user.js controller)
+const getUserDetails = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ errorMessage: 'User not found' });
+        }
+
+        res.json({ firstName: user.firstName, lastName: user.lastName });
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        res.status(500).json({ errorMessage: 'Something went wrong' });
+    }
+};
+
+
+module.exports = { registerUser, loginUser, verifyMail, resendOTP, getUserDetails };
