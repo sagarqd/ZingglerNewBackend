@@ -4,9 +4,10 @@ const Group = require('../models/group');
 const createGroup = async (req, res) => {
     try {
         const { name } = req.body;
-        // Check if the group being created is "teacher" or "student"
-        if (name === 'Teacher' || name === 'Student') {
-            // Handle special logic (e.g., prevent deletion in the future)
+
+        // Check if the group being created is "Admin", "Educator", or "Student"
+        if (name === 'Admin' || name === 'Educator' || name === 'Student') {
+            // Handle special logic for these groups (e.g., special validation or restrictions)
             // For now, simply create the group
             const newGroup = await Group.create(req.body);
             return res.status(201).json(newGroup);
@@ -66,10 +67,10 @@ const deleteGroupById = async (req, res) => {
         if (!groupToDelete) {
             return res.status(404).json({ message: 'Group not found' });
         }
-        
-        // Check if the group is "teacher" or "student"
-        if (groupToDelete.name === 'Teacher' || groupToDelete.name === 'Student') {
-            return res.status(403).json({ message: 'Cannot delete the group. Only editing is allowed for "teacher" and "student" groups.' });
+
+        // Check if the group is "Admin", "Educator", or "Student"
+        if (groupToDelete.name === 'Admin' || groupToDelete.name === 'Educator' || groupToDelete.name === 'Student') {
+            return res.status(403).json({ message: 'Cannot delete the group. Only editing is allowed for "Admin", "Educator", and "Student" groups.' });
         } else {
             const deletedGroup = await Group.findByIdAndDelete(req.params.id);
             if (!deletedGroup) {
