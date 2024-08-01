@@ -21,7 +21,7 @@ const smtp = nodemailer.createTransport({
 // Function to send verification email
 const sendVerifymail = async (firstName, lastName, email, user_id) => {
     try {
-        let user = await User.findById(user_id);
+        let user = await User.findById(email );
 
         if (!user) {
             throw new Error('User not found');
