@@ -36,29 +36,39 @@ exports.requestPasswordReset = async (req, res) => {
 };
 
 exports.verifyOTP = async (req, res) => {
-    const {  otp } = req.body;
-  
-    try {
-      const user = await User.findOne({
-        
-        otp,
-        otpExpiration: { $gt: Date.now() }
-      });
-  
-      if (!user) return res.status(400).send('Invalid or expired OTP.');
-  
-      // If OTP is valid, respond with success and potentially a flag/token
-      // This is where you would set the OTP as verified if necessary
-      res.json({ message: 'OTP verified successfully', status: 'success' });
-  
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      res.status(500).send('Error verifying OTP.');
+  const { email, otp } = req.body;
+
+  try {
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required' });
     }
+
+    // Log incoming data for debugging
+    console.log('Verifying OTP for email:', email);
+
+    const user = await User.findOne({
+      email,
+      otp,
+      otpExpiration: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired OTP.' });
+    }
+
+    // Here you can mark OTP as used or expired if necessary
+
+    res.json({ message: 'OTP verified successfully', status: 'success' });
+
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({ message: 'Error verifying OTP.', error: error.message });
   }
+};
+
 
   exports.resetPassword = async (req, res) => {
-    const { newPassword, confirmPassword } = req.body;
+    const { email,newPassword, confirmPassword } = req.body;
   
     try {
       // Check if new password and confirm password match
@@ -67,7 +77,7 @@ exports.verifyOTP = async (req, res) => {
       }
   
       // Find the user by email
-      const user = await User.findOne({  });
+      const user = await User.findOne({ email });
   
       if (!user) return res.status(404).send('User not found.');
   
