@@ -18,10 +18,10 @@ const smtp = nodemailer.createTransport({
     }
 });  
 
-// Function to send verification email
 const sendVerifymail = async (firstName, lastName, email, user_id) => {
     try {
-        let user = await User.findById(email );
+        // Assuming 'email' is a field in your User schema
+        let user = await User.findOne({ email });
 
         if (!user) {
             throw new Error('User not found');
@@ -61,6 +61,7 @@ const sendVerifymail = async (firstName, lastName, email, user_id) => {
         throw new Error('Failed to send verification email.');
     }
 };
+
 
 // Function to register a new user
 const registerUser = async (req, res) => {

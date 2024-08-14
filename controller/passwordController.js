@@ -16,7 +16,7 @@ exports.requestPasswordReset = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }); 
     if (!user) return res.status(404).send('No user found with that email address.');
 
     const otp = generateOTP(); // Generate OTP
@@ -36,34 +36,31 @@ exports.requestPasswordReset = async (req, res) => {
 };
 
 exports.verifyOTP = async (req, res) => {
-  const { email, otp } = req.body;
-
   try {
-    if (!email || !otp) {
-      return res.status(400).json({ message: 'Email and OTP are required' });
+        const { email, otp } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ errorMessage: 'User not found.' });
+        }
+
+        if (user.otp !== otp || user.otpExpiration < new Date()) {
+            return res.status(400).json({ errorMessage: 'Invalid or expired OTP.' });
+        }
+
+        user.isVerified = true;
+        user.otp = null;
+        user.otpExpiration = null;
+        user.otpVerifiedAt = new Date();
+
+        await user.save();
+
+        res.json({ message: 'Email verified successfully.' });
+    } catch (error) {
+        console.error('Error in verifyMail:', error);
+        res.status(500).json({ errorMessage: 'Something went wrong.' });
     }
-
-    // Log incoming data for debugging
-    console.log('Verifying OTP for email:', email);
-
-    const user = await User.findOne({
-      email,
-      otp,
-      otpExpiration: { $gt: Date.now() }
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired OTP.' });
-    }
-
-    // Here you can mark OTP as used or expired if necessary
-
-    res.json({ message: 'OTP verified successfully', status: 'success' });
-
-  } catch (error) {
-    console.error('Error verifying OTP:', error);
-    res.status(500).json({ message: 'Error verifying OTP.', error: error.message });
-  }
 };
 
 

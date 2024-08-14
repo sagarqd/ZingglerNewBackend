@@ -7,6 +7,8 @@ const profileRoute=require("./router/profile");
 const groupRoute=require('./router/group');
 const courseRoute=require('./router/course');
 const resetPassword=require('./router/passwordRoutes');
+const videoRoute=require('./router/videoRoutes');
+
 const cors=require("cors")
 dotenv.config();
 
@@ -17,6 +19,7 @@ mongoose.connect(process.env.MONGODB_URL)
 .catch((error)=>console.log("DB unable to connect",error))
 
 app.use(express.json());  // middleware to parse json data
+app.use(express.urlencoded({ extended: true }));  // For form-urlencoded payloads
 app.get('/',(req,res)=>{
     res.send("Welcome to Express!");
 })
@@ -26,6 +29,7 @@ app.use('/api',profileRoute); // middleware for routes under /api/
 app.use('/api',groupRoute); // middleware for routes under /api)
 app.use('/api',courseRoute); // middleware for routes under
 app.use('/api',resetPassword); // middleware for routes under
+app.use('/api/video',videoRoute); // middleware for routes under
 const port=8080;
 
 app.listen(port,()=>{

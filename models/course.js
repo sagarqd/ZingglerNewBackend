@@ -1,83 +1,122 @@
 const mongoose = require("mongoose");
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
+const slugify = require("slugify");
 
-const courseSchema = mongoose.Schema({
-  courses_id: {
-    type: String,
-    unique: true,
-    default: uuidv4 // Generates a unique ID for each new document
-  },
-  general: {
-    courseInformation: {
-      courseFullName: { type: String },
-      courseShortName: { type: String },
-      courseIdNumber: { type: String , unique: true },
-      teacherName: { type: String},
-      avatar: { type: String}
+const courseSchema = mongoose.Schema(
+  {
+    courseId: {
+      type: String,
+      unique: true,
+      default: uuidv4, // Generates a unique ID for each new document
     },
-    advanceSettings: {
-      downloadCourse: { type: String, enum: ["yes", "no"], default: "no" },
-      courseVisibility: { type: String, enum: ["yes", "no"], default: "yes" },
-      selectCourse: { type: String, enum: ['web development', 'digital marketing', 'application development', 'graphic designing'] }
+    slug: {
+      type: String,
+      unique: true, // Ensure slugs are unique
+      required: true,
+    },
+    general: {
+      courseInformation: {
+        courseFullName: { type: String },
+        courseShortName: { type: String },
+        courseIdNumber: { type: String },
+      },
+      advanceSettings: {
+        downloadCourse: { type: String, default: "no" },
+        courseVisibility: { type: String, default: "yes" },
+        selectCourse: { type: String }, // Corrected typo
+      },
+    },
+    description: {
+      courseDescription: { type: String },
+      thumbnail: {
+        courseThumbnail: { type: String },
+        courseVideo: { type: String },
+      },
+    },
+    format: {
+      hiddenSection: {
+        type: String,
+      },
+      courseLayout: {
+        type: String,
+        // Corrected capitalization
+      },
+      courseSection: {
+        type: String,
+      },
+      noOfSection: { type: Number, default: 0 },
+    },
+    appearance: {
+      theme: {
+        type: String,
+      },
+      showReportActivity: {
+        type: String,
+      },
+      showGradeBook: { type: String },
+      language: { type: String },
+      showActivityDates: { type: String },
+      noOfAnnouncement: { type: Number, default: 0 },
+    },
+    completion: {
+      enableCompletionTracking: { type: String },
+      showActivityCompletionConditions: { type: String },
+    },
+    group: {
+      groupMode: {
+        type: String,
+      },
+      forcedGroupMode: { type: String },
+      tags: { type: String }, // Corrected enum value
+      numberOfAnnouncement: { type: Number },
+    },
+    status: {
+      type: String,
+      enum: ["draft", "completed"],
+      default: "draft", // Default to draft if not specified
     },
   },
-  description: {
-    courseDescription: { type: String },
-    thumbnail: { 
-      courseThumbnail: { type: String }, // Changed this to a string
-      courseVideo: { type: String }
+  {
+    timestamps: true, // Add timestamp fields automatically
+  }
+);
+
+// Pre-save hook to generate slug
+courseSchema.pre("save", async function (next) {
+  if (
+    this.isModified("general.courseInformation.courseFullName") ||
+    this.isNew
+  ) {
+    // Generate slug
+    let slug = slugify(this.general.courseInformation.courseFullName, {
+      lower: true,
+      strict: true,
+    });
+
+    // Check for uniqueness
+    const existingCourse = await mongoose.models.Course.findOne({ slug });
+    if (existingCourse) {
+      slug = `${slug}-${Date.now()}`; // Append a timestamp to make it unique
     }
-  },
-  format: {
-    courseFormat: {
-      type: String,
-      enum: ["Custom Section", "Weekly Section", "Single Activity", "Social"],
-    },
-    courseLayout: {
-      type: String,
-      enum: ["Show all sections on one page", "show one section per page"],
-    },
-    hiddenSection: {
-      type: String,
-      enum: [
-        "Hidden sections are not shown as not available",
-        "Hidden sections are completely invisible",
-      ],
-    },
-    numberOfSections: { type: Number, default: 0 },
-  },
-  appearance: {
-    courseAppearance: {
-      type: String, // Adjusted to String type
-      enum: ["none", "classic", "boost"], // Enum values for valid strings
-    },
-    language: {
-      type: String,
-      enum: ["english", "english(UK)", "german", "french"],
-    },
-    showActivityDates: { type: String, enum: ["yes", "no"] },
-    showGradeBook: { type: String, enum: ["yes", "no"] },
-    numberOfAnnouncements: { type: Number, default: 0 },
-  },
-  completion: {
-    courseCompletion: {
-      type: String,
-      enum: ["yes", "no"],
-      default: "no",
-    },
-    enableCompletionTracking: { type: String, enum: ["yes", "no"] },
-    showActivityCompletionConditions: { type: String, enum: ["yes", "no"] },
-  },
-  group: {
-    courseGroup: {
-      type: String,
-      enum: ["no group", "separate group", "visible group"],
-    },
-    forcedGroupMode: { type: String, enum: ["yes", "no"] },
-    tags: { type: String, enum: ["basic", "intermediate", "advance"] },
-  },
-}, {
-  timestamps: true, // Add timestamp fields automatically
+
+    this.slug = slug;
+  }
+  // Set status to 'completed' if all required fields are present
+  const allRequiredFieldsPresent =
+    this.general.courseInformation.courseFullName &&
+    this.general.courseInformation.courseShortName &&
+    this.general.courseInformation.courseIdNumber &&
+    this.description.courseDescription &&
+    this.format.courseLayout &&
+    this.appearance.theme;
+
+  if (allRequiredFieldsPresent) {
+    this.status = "completed";
+  }else {
+    console.log('Status is draft. Missing required fields.');
+  }
+
+  next();
 });
 
 module.exports = mongoose.model("Course", courseSchema);
