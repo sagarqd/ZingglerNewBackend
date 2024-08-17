@@ -14,6 +14,7 @@ const courseSchema = mongoose.Schema(
       unique: true, // Ensure slugs are unique
       required: true,
     },
+    
     general: {
       courseInformation: {
         courseFullName: { type: String },
@@ -43,6 +44,9 @@ const courseSchema = mongoose.Schema(
       },
       courseSection: {
         type: String,
+      },
+      typeOfActivity:{
+        type:String
       },
       noOfSection: { type: Number, default: 0 },
     },

@@ -1,37 +1,70 @@
-const express=require('express');
-const app=express();
-const dotenv=require('dotenv');
-const mongoose=require('mongoose');
-const authRoute=require("./router/auth");
-const profileRoute=require("./router/profile");
-const groupRoute=require('./router/group');
-const courseRoute=require('./router/course');
-const resetPassword=require('./router/passwordRoutes');
-const videoRoute=require('./router/videoRoutes');
+const express = require('express');
+const app = express();
+const dotenv = require('dotenv');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const path = require('path');
 
-const cors=require("cors")
+// Import routes
+const authRoute = require('./router/auth');
+const profileRoute = require('./router/profile');
+const groupRoute = require('./router/group');
+const courseRoute = require('./router/course');
+const resetPassword = require('./router/passwordRoutes');
+const videoRoute = require('./router/videoRoutes');
+const studentRoute= require('./router/studentRoutes');
+// Import Course model
+const Course = require('./models/course');
+
+// Load environment variables
 dotenv.config();
 
-app.use(cors());
-
+// Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URL)
-.then(()=>{console.log("Db connected Successfully")})
-.catch((error)=>console.log("DB unable to connect",error))
+  .then(() => console.log('DB connected Successfully'))
+  .catch((error) => console.log('DB unable to connect', error));
 
-app.use(express.json());  // middleware to parse json data
-app.use(express.urlencoded({ extended: true }));  // For form-urlencoded payloads
-app.get('/',(req,res)=>{
-    res.send("Welcome to Express!");
-})
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.use('/api/auth',authRoute);  // middleware for routes under /api/user
-app.use('/api',profileRoute); // middleware for routes under /api/ 
-app.use('/api',groupRoute); // middleware for routes under /api)
-app.use('/api',courseRoute); // middleware for routes under
-app.use('/api',resetPassword); // middleware for routes under
-app.use('/api/video',videoRoute); // middleware for routes under
-const port=8080;
+// Routes
+app.get('/', (req, res) => {
+  res.send('Welcome to Express!');
+});
 
-app.listen(port,()=>{
-    console.log(`Server is running on port ${port}`);
-}) 
+// Course route
+
+// Course route
+app.get('/api/courses/:slug', async (req, res) => {
+    const { slug } = req.params;
+    try {
+      const course = await Course.findOne({ slug }).exec(); // Use Course model
+      if (course) {
+        res.json({
+          courseFullName: course.general?.courseInformation?.courseFullName || 'Not available',
+          courseVideo: course.description?.thumbnail?.courseVideo || 'Not available',
+        });
+      } else {
+        res.status(404).json({ message: 'Course not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  });
+  
+
+// Use route files
+app.use('/api/auth', authRoute);
+app.use('/api', profileRoute);
+app.use('/api', groupRoute);
+app.use('/api', courseRoute);
+app.use('/api', resetPassword);
+app.use('/api/video', videoRoute);
+app.use('/api/student', studentRoute);
+const port = 8080;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});

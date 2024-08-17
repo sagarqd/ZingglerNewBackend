@@ -1,6 +1,8 @@
 const Course = require("../models/course"); // Assuming your model is defined in models/course.js
 const upload = require("../middlewares/multerConfig");
 const slugify = require('slugify');
+
+
 // CREATE a new course
 async function createCourse(req, res) {
   try {
@@ -29,14 +31,20 @@ async function createCourse(req, res) {
       slug: slugify(req.body.general.courseInformation.courseFullName, { lower: true, strict: true })
     };
 
-    // Determine the status before creating the course
-    const status = determineStatus(courseData);
+    let status = determineStatus(courseData);
+
+    // Check if this is the final submission
+    if (req.body.isFinal === 'true') {
+      status = 'completed';
+    }
+
     const courseDataWithStatus = { ...courseData, status };
 
     // Create a new course document
     const course = new Course(courseDataWithStatus);
     await course.save();
-    // Respond with the updated course document
+    
+    // Respond with the created course document
     res.status(201).json(course);
   } catch (error) {
     console.error("Error creating course:", error.message);
@@ -88,12 +96,10 @@ async function getCourseBySlug(req,res){
 
 
 // UPDATE a course by ID with file handling
-async function updateCourseById(req, res) {
+const updateCourseById = async (req, res) => {
   try {
-    // Initialize file paths
     let thumbnailFile, videoFile;
 
-    // Check if files are present in req.files
     if (req.files && req.files['thumbnail']) {
       thumbnailFile = `/uploads/${req.files['thumbnail'][0].filename}`;
     }
@@ -101,32 +107,28 @@ async function updateCourseById(req, res) {
       videoFile = `/uploads/${req.files['video'][0].filename}`;
     }
 
-    // Extract and parse description
     const description = req.body.description ? JSON.parse(req.body.description) : {};
 
-    // Extract other form data
-    const { hiddenSection, courseLayout, courseSection, noOfSection } = req.body;
+    const { hiddenSection, courseLayout, courseSection, typeOfActivity, noOfSection } = req.body;
     const { theme, showReportActivity, showGradeBook, language, showActivityDates, noOfAnnouncement } = req.body;
     const { enableCompletionTracking, showActivityCompletionConditions } = req.body;
     const { groupMode, forcedGroupMode, tags, numberOfAnnouncement } = req.body;
 
-    // Determine the status value
-    const status = determineStatus(req.body);
+    const status = req.body.isFinal === 'true' ? 'completed' : determineStatus(req.body);
 
-    // Find the existing course
     const existingCourse = await Course.findById(req.params.id);
     if (!existingCourse) {
       console.log('Course not found with ID:', req.params.id);
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    // Prepare the update data
     const updateData = {
       ...existingCourse.toObject(),
       format: {
         hiddenSection: hiddenSection || existingCourse.format.hiddenSection,
         courseLayout: courseLayout || existingCourse.format.courseLayout,
         courseSection: courseSection || existingCourse.format.courseSection,
+        typeOfActivity: typeOfActivity || existingCourse.format.typeOfActivity,
         noOfSection: noOfSection || existingCourse.format.noOfSection,
       },
       appearance: {
@@ -162,23 +164,19 @@ async function updateCourseById(req, res) {
       updateData.slug = slugify(req.body.general.courseInformation.courseFullName, { lower: true, strict: true });
     }
 
-    // Log the update data for debugging
-    console.log('Update Data:', updateData);
-
-    // Update the course
     const updatedCourse = await Course.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!updatedCourse) {
       console.log('Update failed for course ID:', req.params.id);
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    // Send response
     res.json(updatedCourse);
   } catch (err) {
     console.error('Error updating course:', err.message);
     res.status(500).json({ message: 'Error updating course', error: err.message });
   }
-}
+};
+
 
 // Helper function to determine status based on completion criteria
 const determineStatus = (body) => {
@@ -187,7 +185,7 @@ const determineStatus = (body) => {
   const isActivityCompletionConditionsShown = body.showActivityCompletionConditions === 'Yes';
   const isCourseInformationComplete = body.general && body.general.courseInformation && body.general.courseInformation.courseFullName && body.general.courseInformation.courseShortName;
   const isDescriptionComplete = body.description && body.description.courseDescription && body.description.thumbnail && body.description.thumbnail.courseThumbnail && body.description.thumbnail.courseVideo;
-  const isFormatComplete = body.format && body.format.hiddenSection && body.format.courseLayout && body.format.courseSection;
+  const isFormatComplete = body.format && body.format.hiddenSection && body.format.courseLayout&&body.format.typeOfActivity && body.format.courseSection;
   const isAppearanceComplete = body.appearance && body.appearance.theme && body.appearance.showReportActivity && body.appearance.showGradeBook && body.appearance.language && body.appearance.noOfAnnouncement !== undefined;
   const isGroupComplete = body.group && body.group.groupMode && body.group.tags;
 
