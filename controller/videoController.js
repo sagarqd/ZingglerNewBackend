@@ -1,40 +1,131 @@
 const Grid = require("gridfs-stream");
 const mongoose = require("mongoose");
 const Video = require("../models/video");
+const Question = require("../models/questions");
 const { convertVideo, generateThumbnail } = require("../utils/ffmpegUtils");
 const path = require("path");
 const fs = require("fs");
+const { v4: uuidv4 } = require('uuid');
+
 
 const uploadVideo = async (req, res) => {
   const file = req.file;
-
+  const {title,courseId,sectionNumber} = req.body;
   if (!file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
-  const { originalname, mimetype, size, buffer } = file;
+  const { originalname, mimetype, buffer } = file;
+  const { questions } = req.body;
   const uploadDate = new Date();
-  const gfs = req.app.locals.gfs; // Access GridFS instance
+  const videoId = uuidv4(); 
+  const uploadDir = path.join(__dirname, '..', 'uploads');
+  const uploadPath = path.join(uploadDir, `${videoId}-${originalname}`);
 
-  const writestream = gfs.createWriteStream({ filename: originalname, contentType: mimetype });
-
-  writestream.on("close", async (file) => {
+  try {
+    let parsedQuestions = [];
     try {
-      const newVideo = new Video({
-        filename: file.filename,
-        contentType: file.contentType,
-        length: file.length,
-        uploadDate: file.uploadDate,
-      });
-      await newVideo.save();
-      res.status(200).json({ file });
+      parsedQuestions = JSON.parse(questions);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      return res.status(400).json({ error: 'Invalid JSON format for questions' });
     }
-  });
 
-  writestream.end(buffer);
+    const questionTimings = await Promise.all(
+      parsedQuestions.map(async (q) => {
+        let questionId;
+        if (q._id) {
+          const updatedQuestion = await Question.findByIdAndUpdate(
+            q._id,
+            {
+              question: q.question,
+              options: q.options || [], // Update options if provided
+              correctAnswers: q.correctAnswers || [], // Update correct answers if provided
+              type: q.type || 'one-line', // Include the type field
+              isDefault: q.isDefault || false
+            },
+            { new: true, runValidators: true }
+          );
+          questionId = updatedQuestion._id;
+        } else {
+          const newQuestion = new Question({
+            question: q.question,
+            options: q.options || [],
+            correctAnswers: q.correctAnswers || [],
+            type: q.type || 'one-line', // Include the type field
+            isDefault: q.isDefault || false
+          });
+          await newQuestion.save();
+          questionId = newQuestion._id;
+        }
+
+        return {
+          question: questionId,
+          startTime: q.startTime, 
+          endTime: q.endTime      
+        };
+      })
+    );
+
+    fs.writeFile(uploadPath, buffer, async (err) => {
+      if (err) {
+        console.error('Error saving file:', err);
+        return res.status(500).json({ error: 'File save error' });
+      }
+
+      const newVideo = new Video({
+        filename: `${videoId}-${originalname}`,
+        contentType: mimetype,
+        length: buffer.length,
+        uploadDate: uploadDate,
+        questions: questionTimings, 
+        title:title,
+        course:courseId,
+        sectionNumber:sectionNumber
+      });
+
+      await newVideo.save();
+      res.status(200).json({ file: newVideo });
+    });
+
+  } catch (err) {
+    console.error('Error processing video upload:', err);
+    res.status(500).json({ error: err.message });
+  }
 };
+
+const fetchAllVideo = async(req,res) => {
+  try {
+    const video = await Video.find().populate({
+      path: 'questions.question', 
+    });
+    res.status(200).send({
+      message:"Fetched All the video",
+      video,
+      success:true
+    });
+  } catch (error) {
+    console.log('Error Fetching video:',error),
+    res.status(500).json({ error: error.message });
+  }
+}
+
+const fetchVideoByID = async(req,res)=>{
+  try {
+    const {id} = req.params;
+    const video = await Video.findById(id).populate({
+      path: 'questions.question', 
+    });
+    res.status(200).send({
+      message:"Fetched the video By Id",
+      video,
+      success:true
+    });
+
+  } catch (error) {
+      console.log('Error Fetching video By ID:',error),
+      res.status(500).json({ error: error.message });
+  }
+}
 
 const streamVideo = (req, res) => {
   const gfs = Grid(req.app.locals.db, mongoose.mongo);
@@ -115,6 +206,8 @@ const generateVideoThumbnail = async (req, res) => {
 
 module.exports = {
   uploadVideo,
+  fetchAllVideo,
+  fetchVideoByID,
   streamVideo,
   convertVideoFormat,
   generateVideoThumbnail,

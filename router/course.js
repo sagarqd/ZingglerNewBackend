@@ -8,11 +8,7 @@ router.post('/courses', upload.fields([{ name: 'thumbnail' }, { name: 'video' }]
 
 // Fetch all courses
 router.get('/courses', courseController.getAllCourses);
-
-// Fetch a specific course by its ID
 router.get('/courses/:id', courseController.getCourseById);
-
-// Fetch a specific course by its slug
 router.get('/courses/slug/:slug', courseController.getCourseBySlug);
 
 // Update a specific course by its ID (including file uploads)
