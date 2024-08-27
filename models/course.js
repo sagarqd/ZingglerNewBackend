@@ -14,7 +14,7 @@ const courseSchema = mongoose.Schema(
       unique: true, // Ensure slugs are unique
       required: true,
     },
-    
+
     general: {
       courseInformation: {
         courseFullName: { type: String },
