@@ -10,7 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const uploadVideo = async (req, res) => {
   const file = req.file;
-
+  const {title,courseId,sectionNumber} = req.body;
   if (!file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
@@ -19,7 +19,8 @@ const uploadVideo = async (req, res) => {
   const { questions } = req.body;
   const uploadDate = new Date();
   const videoId = uuidv4(); 
-  const uploadPath = path.join(__dirname, '..', 'uploads', `${videoId}-${originalname}`);
+  const uploadDir = path.join(__dirname, '..', 'uploads');
+  const uploadPath = path.join(uploadDir, `${videoId}-${originalname}`);
 
   try {
     let parsedQuestions = [];
@@ -77,6 +78,9 @@ const uploadVideo = async (req, res) => {
         length: buffer.length,
         uploadDate: uploadDate,
         questions: questionTimings, 
+        title:title,
+        course:courseId,
+        sectionNumber:sectionNumber
       });
 
       await newVideo.save();
@@ -88,8 +92,6 @@ const uploadVideo = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-
 
 const fetchAllVideo = async(req,res) => {
   try {
@@ -124,15 +126,6 @@ const fetchVideoByID = async(req,res)=>{
       res.status(500).json({ error: error.message });
   }
 }
-
-
-
-
-
-
-
-
-
 
 const streamVideo = (req, res) => {
   const gfs = Grid(req.app.locals.db, mongoose.mongo);
