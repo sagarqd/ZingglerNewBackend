@@ -43,7 +43,7 @@ async function createCourse(req, res) {
     // Create a new course document
     const course = new Course(courseDataWithStatus);
     await course.save();
-    
+
     // Respond with the created course document
     res.status(201).json(course);
   } catch (error) {
