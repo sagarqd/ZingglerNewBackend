@@ -7,11 +7,11 @@ const courseSchema = mongoose.Schema(
     courseId: {
       type: String,
       unique: true,
-      default: uuidv4, // Generates a unique ID for each new document
+      default: uuidv4,
     },
     slug: {
       type: String,
-      unique: true, // Ensure slugs are unique
+      unique: true,
       required: true,
     },
 
@@ -24,7 +24,7 @@ const courseSchema = mongoose.Schema(
       advanceSettings: {
         downloadCourse: { type: String, default: "no" },
         courseVisibility: { type: String, default: "yes" },
-        selectCourse: { type: String }, // Corrected typo
+        selectCourse: { type: String },
       },
     },
     description: {
@@ -40,7 +40,6 @@ const courseSchema = mongoose.Schema(
       },
       courseLayout: {
         type: String,
-        // Corrected capitalization
       },
       courseSection: {
         type: String,
@@ -49,6 +48,11 @@ const courseSchema = mongoose.Schema(
         type:String
       },
       noOfSection: { type: Number, default: 0 },
+    },
+    courseSections:{
+      sectionTitle: {type: String},
+      contentType:{type: String},
+      blogUrl:{type: String},
     },
     appearance: {
       theme: {

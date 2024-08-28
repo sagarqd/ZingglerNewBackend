@@ -215,6 +215,22 @@ async function deleteCourseById(req, res) {
   }
 }
 
+const getNoOfSections = async (req, res) => {
+  try {
+      const course = await Course.findOne({ courseId: req.params.id });
+      if (!course) {
+          return res.status(404).json({ message: 'Course not found' });
+      }
+
+      // Extract noOfSection from the format field
+      const noOfSection = course.format.noOfSection;
+      res.json({ noOfSection });
+  } catch (error) {
+      console.error('Error fetching course data:', error);
+      res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   createCourse,
   getAllCourses,
@@ -222,4 +238,5 @@ module.exports = {
   updateCourseById,
   deleteCourseById,
   getCourseBySlug,
+  getNoOfSections
 };
