@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { uploadVideo, streamVideo, convertVideoFormat, generateVideoThumbnail, fetchAllVideo, fetchVideoByID } = require('../controller/videoController');
+const { uploadVideo, streamVideo, convertVideoFormat, generateVideoThumbnail, fetchAllVideo, fetchVideoByID, fetchVideoByCourseId } = require('../controller/videoController');
 
 // Configure multer
 const storage = multer.memoryStorage();
@@ -13,8 +13,11 @@ router.post('/upload', upload.single('file'), uploadVideo);
 // FetchAll the videos
 router.get('/fetchVideos',fetchAllVideo);
 
-// Ferch By Id
+// Fetch By Id
 router.get('/fetchById/:id',fetchVideoByID);
+
+// Fetch By CourseId
+router.get('/fetchByCourseId/:courseId',fetchVideoByCourseId)
 
 
 // Stream video

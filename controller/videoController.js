@@ -127,6 +127,21 @@ const fetchVideoByID = async(req,res)=>{
   }
 }
 
+const fetchVideoByCourseId = async(req,res)=>{
+  try {
+  const{courseId} = req.params;
+  const video = await Video.find({ course: courseId }).sort({ sectionNumber: 1 });
+  res.status(200).send({
+    message:"Fetched the video By Course Id",
+    video,
+    success:true
+  });
+}catch (error) {
+    console.log('Error Fetching video By Course ID:',error),
+    res.status(500).json({ error: error.message });
+  }
+}
+
 const streamVideo = (req, res) => {
   const gfs = Grid(req.app.locals.db, mongoose.mongo);
   gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
@@ -211,4 +226,5 @@ module.exports = {
   streamVideo,
   convertVideoFormat,
   generateVideoThumbnail,
+  fetchVideoByCourseId
 };
