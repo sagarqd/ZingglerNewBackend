@@ -9,7 +9,7 @@ const upload = multer({ storage });
 
 // Upload video
 router.post('/upload', upload.single('file'), uploadVideo);
-router.post('/questions/:videoId/', addQuestionsToVideo);
+router.put('/questions/:videoId/', addQuestionsToVideo);
 
 // FetchAll the videos
 router.get('/fetchVideos',fetchAllVideo);
