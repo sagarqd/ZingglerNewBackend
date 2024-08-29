@@ -4,8 +4,8 @@ const mongoose = require('mongoose');
 const studentSchema = new mongoose.Schema({
     student_id: {
         type: String,
-        unique: true,
-        default: uuidv4 // Generates a unique ID for each new document
+        required: true,
+        ref: 'User' // Reference to the User model
     },
     fullName: {
         type: String,
