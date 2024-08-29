@@ -26,7 +26,9 @@ const userSchema = new mongoose.Schema({
   },
   isVerified: {
     type: Boolean,
-    default: false
+    default: function () {
+      return this.userType !== 'student';
+    }
   },
   otpVerifiedAt: {
     type: Date
