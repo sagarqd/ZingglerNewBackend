@@ -49,11 +49,13 @@ const courseSchema = mongoose.Schema(
       },
       noOfSection: { type: Number, default: 0 },
     },
-    courseSections:{
-      sectionTitle: {type: String},
-      contentType:{type: String},
-      blogUrl:{type: String},
-    },
+    courseSections: [
+      {
+        sectionTitle: { type: String, required: true }, // Set sectionTitle as required
+        contentType: { type: String },
+        // blogUrl: { type: String },
+      },
+    ],
     appearance: {
       theme: {
         type: String,

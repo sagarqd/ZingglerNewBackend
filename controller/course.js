@@ -109,10 +109,45 @@ const updateCourseById = async (req, res) => {
 
     const description = req.body.description ? JSON.parse(req.body.description) : {};
 
-    const { hiddenSection, courseLayout, courseSection, typeOfActivity, noOfSection } = req.body;
-    const { theme, showReportActivity, showGradeBook, language, showActivityDates, noOfAnnouncement } = req.body;
-    const { enableCompletionTracking, showActivityCompletionConditions } = req.body;
-    const { groupMode, forcedGroupMode, tags, numberOfAnnouncement } = req.body;
+    const { 
+      hiddenSection, 
+      courseLayout, 
+      courseSection, 
+      typeOfActivity, 
+      noOfSection 
+    } = req.body;
+
+    const { 
+      theme, 
+      showReportActivity, 
+      showGradeBook, 
+      language, 
+      showActivityDates, 
+      noOfAnnouncement 
+    } = req.body;
+
+    const { 
+      enableCompletionTracking, 
+      showActivityCompletionConditions 
+    } = req.body;
+
+    const { 
+      groupMode, 
+      forcedGroupMode, 
+      tags, 
+      numberOfAnnouncement 
+    } = req.body;
+
+    // Handle courseSections
+    let courseSections = []
+    if (req.body.courseSections) {
+      try {
+        courseSections = JSON.parse(req.body.courseSections);
+      } catch (error) {
+        console.error("Error parsing courseSections:", error.message);
+        return res.status(400).json({ message: "Invalid courseSections format" });
+      }
+    }
 
     const status = req.body.isFinal === 'true' ? 'completed' : determineStatus(req.body);
 
@@ -157,6 +192,7 @@ const updateCourseById = async (req, res) => {
           courseVideo: videoFile || existingCourse.description?.thumbnail?.courseVideo,
         }
       },
+      courseSections: courseSections, // Update courseSections
       status // Update the status
     };
 
