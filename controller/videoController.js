@@ -192,7 +192,29 @@ const addQuestionsToVideo = async (req, res) => {
   }
 };
 
+const fetchVideoByCourseIdAndSectionNumber = async (req, res) => {
+  try {
+    const { courseId, sectionNumber } = req.params;
 
+    if (!courseId || !sectionNumber) {
+      return res.status(400).json({ message: 'Course ID and section number are required.' });
+    }
+
+    const video = await Video.findOne({ course: courseId, sectionNumber: sectionNumber }).populate({
+      path: 'questions.question', 
+    });
+
+    if (!video) {
+      return res.status(404).json({ message: 'Video not found for the specified course and section.' });
+    }
+    res.json({
+      video
+    });
+  } catch (error) {
+    console.error('Error fetching video:', error.message);
+    res.status(500).json({ message: 'Error fetching video', error: error.message });
+  }
+};
 const fetchAllVideo = async(req,res) => {
   try {
     const video = await Video.find().populate({
@@ -327,5 +349,6 @@ module.exports = {
   convertVideoFormat,
   generateVideoThumbnail,
   fetchVideoByCourseId,
-  addQuestionsToVideo
+  addQuestionsToVideo,
+  fetchVideoByCourseIdAndSectionNumber
 };
