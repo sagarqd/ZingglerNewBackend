@@ -151,10 +151,10 @@ const addQuestionsToVideo = async (req, res) => {
           const updatedQuestion = await Question.findByIdAndUpdate(
             q._id,
             {
-              question: q.question,
+              questionText: q.questionText,
               options: q.options || [],
-              correctAnswers: q.correctAnswers || [],
-              type: q.type || 'one-line',
+              correctAnswer: q.correctAnswer || [],
+              type: q.type || 'oneLine',
               isDefault: q.isDefault || false
             },
             { new: true, runValidators: true }
@@ -162,10 +162,10 @@ const addQuestionsToVideo = async (req, res) => {
           questionId = updatedQuestion._id;
         } else {
           const newQuestion = new Question({
-            question: q.question,
+            questionText: q.questionText,
             options: q.options || [],
-            correctAnswers: q.correctAnswers || [],
-            type: q.type || 'one-line',
+            correctAnswer: q.correctAnswer || [],
+            type: q.type || 'oneLine',
             isDefault: q.isDefault || false
           });
           await newQuestion.save();
