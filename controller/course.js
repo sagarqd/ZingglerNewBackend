@@ -139,7 +139,7 @@ const updateCourseById = async (req, res) => {
     } = req.body;
 
     // Handle courseSections
-    let courseSections = []
+    let courseSections = [];
     if (req.body.courseSections) {
       try {
         courseSections = JSON.parse(req.body.courseSections);
@@ -147,6 +147,14 @@ const updateCourseById = async (req, res) => {
         console.error("Error parsing courseSections:", error.message);
         return res.status(400).json({ message: "Invalid courseSections format" });
       }
+    } else {
+      // If courseSections is not provided, use the existing one
+      const existingCourse = await Course.findById(req.params.id);
+      if (!existingCourse) {
+        console.log('Course not found with ID:', req.params.id);
+        return res.status(404).json({ message: 'Course not found' });
+      }
+      courseSections = existingCourse.courseSections || [];
     }
 
     const status = req.body.isFinal === 'true' ? 'completed' : determineStatus(req.body);
