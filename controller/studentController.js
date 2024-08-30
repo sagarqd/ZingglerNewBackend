@@ -58,13 +58,7 @@ exports.addStudent = async (req, res) => {
             enrollmentDate,
             courseName,
             academicLevel,
-<<<<<<< Updated upstream
             studentAvatar
-           
-=======
-            studentAvatar,
-            isVerified: true // Skip verification and set as verified
->>>>>>> Stashed changes
         });
 
         await newStudent.save();
