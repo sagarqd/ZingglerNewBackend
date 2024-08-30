@@ -17,13 +17,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Create student
-<<<<<<< Updated upstream
-exports.registerStudent = async (req, res) => {
-    const { fullName, gender, userName, dateOfBirth, password, contactNumber, email, emergencyNumber, address, matriculation, intermediate, bachelorDegree, enrollmentDate, courseName, academicLevel, studentAvatar } = req.body;
-
-=======
 exports.addStudent = async (req, res) => {
->>>>>>> Stashed changes
     try {
         const {email, password, fullName, gender, userName, dateOfBirth, contactNumber, emergencyNumber, address, matriculation, intermediate, bachelorDegree, courseName, academicLevel, enrollmentDate } = req.body;
 
@@ -65,7 +59,7 @@ exports.addStudent = async (req, res) => {
             courseName,
             academicLevel,
             studentAvatar
-            isVerified: true // Skip verification and set as verified
+           
         });
 
         await newStudent.save();
@@ -85,18 +79,10 @@ exports.addStudent = async (req, res) => {
                 <p>Best regards,<br>Zinggerr Team</p>
             ` // HTML body content
 
-<<<<<<< Updated upstream
-        try {
-            await transporter.sendMail(mailOptions);
-        } catch (emailError) {
-            console.error('Error sending email:', emailError);
-        }
-=======
          };
 
         // Send the email
         await transporter.sendMail(mailOptions);
->>>>>>> Stashed changes
 
         res.status(201).json({ message: 'Student added successfully', student: newStudent });
     } catch (error) {
@@ -146,7 +132,14 @@ exports.addStudent = async (req, res) => {
         }
     };
 };
- 
+exports.getAllStudents = async (req, res) => {
+    try {
+        const students = await Student.find(); // Retrieve all students from the database
+        res.status(200).json(students); // Send the list of students as a JSON response
+    } catch (error) {
+        res.status(500).json({ message: error.message }); // Handle errors
+    }
+};
 exports.enrollStudent = async (req, res) => {
     const { studentId, courseId } = req.body;
 
