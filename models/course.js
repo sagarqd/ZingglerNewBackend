@@ -85,6 +85,10 @@ const courseSchema = mongoose.Schema(
       enum: ["draft", "completed"],
       default: "draft", // Default to draft if not specified
     },
+    enrolledStudents: {
+      type: [String],  // Array of student IDs (as strings)
+      default: [],     // Default to an empty array
+    }
   },
   {
     timestamps: true, // Add timestamp fields automatically

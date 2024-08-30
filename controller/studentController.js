@@ -1,43 +1,59 @@
+const User=require('../models/user');
 const Student = require('../models/student');
+const Course = require('../models/course');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 // Configure Nodemailer
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: process.env.SMTP_PORT === '465',
+    host: 'smtp.hostinger.com',
+    port: 465,
+    secure: true,
     auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD
-    },
-    pool: true,
-    maxConnections: 5,
-    connectionTimeout: 10000, // 10 seconds
-    debug: true
+        user: process.env.SMTP_USER, // Your SMTP username from .env
+        pass: "Test1234@*#"  // Your SMTP password from .env
+    }
 });
+
 // Create student
+<<<<<<< Updated upstream
 exports.registerStudent = async (req, res) => {
     const { fullName, gender, userName, dateOfBirth, password, contactNumber, email, emergencyNumber, address, matriculation, intermediate, bachelorDegree, enrollmentDate, courseName, academicLevel, studentAvatar } = req.body;
 
+=======
+exports.addStudent = async (req, res) => {
+>>>>>>> Stashed changes
     try {
-        // Check if email or username already exists
-        const existingStudent = await Student.findOne({ $or: [{ email }, { userName }] });
-        if (existingStudent) {
-            return res.status(400).json({ message: 'Email or Username already exists' });
-        }
+        const {email, password, fullName, gender, userName, dateOfBirth, contactNumber, emergencyNumber, address, matriculation, intermediate, bachelorDegree, courseName, academicLevel, enrollmentDate } = req.body;
 
-        // Hash password
+        const studentAvatar = req.file ? req.file.path : null;
+
+        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new student
+        // Split fullName into firstName and lastName if needed
+        const [firstName, lastName] = fullName.split(' ');
+
+        // Create and save the user with role 'student'
+        const newUser = new User({
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            userType: 'student'
+        });
+
+        const savedUser = await newUser.save();
+
+        // Create and save the student info
         const newStudent = new Student({
-            fullName,
+            student_id: savedUser._id,
+            fullName, // Using fullName directly
             gender,
             userName,
             dateOfBirth,
-            password: hashedPassword,
+            password: hashedPassword, // Use the hashed password
             contactNumber,
             email,
             emergencyNumber,
@@ -45,33 +61,46 @@ exports.registerStudent = async (req, res) => {
             matriculation,
             intermediate,
             bachelorDegree,
-            enollmentDate,
+            enrollmentDate,
             courseName,
             academicLevel,
             studentAvatar
             isVerified: true // Skip verification and set as verified
         });
 
-        // Save student
         await newStudent.save();
 
-        // Send email
         const mailOptions = {
-            from: process.env.SMTP_USER,
-            to: newStudent.email,
-            subject: 'Your Registration Details',
-            text: `Hello ${newStudent.fullName},\n\nYour account has been created successfully.\n\nUsername: ${newStudent.userName}\nPassword: ${password}\n\nPlease keep these credentials safe.\n\nBest regards,\nThe Team`
-        };
+            from: process.env.SMTP_USER, // sender address
+            to: email, // list of receivers
+            subject: 'Welcome to Our Institution', // Subject line
+            html: `
+                <h1>Welcome, ${fullName}!</h1>
+                <p>Thank you for registering as a student. Below are your account details:</p>
+                <ul>
+                    <li><strong>Username:</strong> ${userName}</li>
+                    <li><strong>Email:</strong> ${email}</li>
+                </ul>
+                <p>Please keep your password secure. If you have any questions, feel free to contact us.</p>
+                <p>Best regards,<br>Zinggerr Team</p>
+            ` // HTML body content
 
+<<<<<<< Updated upstream
         try {
             await transporter.sendMail(mailOptions);
         } catch (emailError) {
             console.error('Error sending email:', emailError);
         }
+=======
+         };
 
-        res.status(201).json({ message: 'Student registered successfully and email sent' });
+        // Send the email
+        await transporter.sendMail(mailOptions);
+>>>>>>> Stashed changes
+
+        res.status(201).json({ message: 'Student added successfully', student: newStudent });
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Error', error });
+        res.status(500).json({ error: 'Failed to add student', details: error.message });
     }
     exports.loginStudent = async (req, res) => {
         try {
@@ -116,4 +145,27 @@ exports.registerStudent = async (req, res) => {
             res.status(500).json({ errorMessage: 'Something went wrong' });
         }
     };
+};
+ 
+exports.enrollStudent = async (req, res) => {
+    const { studentId, courseId } = req.body;
+
+    try {
+        const student = await Student.findOne({ student_id: studentId });
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        const course = await Course.findOne({ courseId });
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        course.enrolledStudents.push(studentId);
+        await course.save();
+
+        res.status(200).json({ message: 'Student enrolled successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };

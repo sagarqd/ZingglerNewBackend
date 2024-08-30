@@ -40,6 +40,11 @@ const profileSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  role: {
+    type: String,
+    enum: ['educator', 'student'],
+    default: 'educator'
+},
   gender: {
     type: String,
     enum: ['male', 'female', 'other'],

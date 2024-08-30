@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+<<<<<<< Updated upstream
 const multer = require('multer');
 const { registerStudent } = require('../controller/user');
 
@@ -18,5 +19,12 @@ const upload = multer({ storage: storage });
 
 // Define the route with file upload handling
 router.post('/register', upload.single('studentAvatar'), registerStudent);
+=======
+const upload=require('../middlewares/multerConfig')
+const studentController = require('../controller/studentController');
+
+router.post('/add-student', upload.single('studentAvatar'), studentController.addStudent);
+router.post('/enroll',studentController.enrollStudent);
+>>>>>>> Stashed changes
 
 module.exports = router;
