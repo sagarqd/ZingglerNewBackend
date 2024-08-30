@@ -91,11 +91,11 @@ const registerUser = async (req, res) => {
 
         await userData.save();
 
-        const token = jwt.sign({ userId: userData._id, email: userData.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: userData._id, email: userData.email, userType: userData.userType }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         await sendVerifymail(firstName, lastName, email, userData._id);
 
-        res.json({ token, message: 'User registered successfully. Verification email sent.' });
+        res.json({ token, userType: userData.userType, message: 'User registered successfully. Verification email sent.' });
     } catch (error) {
         console.error('Error in registerUser:', error);
         res.status(500).json({ errorMessage: 'Something went wrong.' });
@@ -166,7 +166,7 @@ const registerStudent = async (req, res) => {
             enrollmentDate,
             courseName,
             academicLevel,
-            studentAvatar, // Assuming this is the path to the uploaded image
+            studentAvatar,
             userType: 'student',
         });
 
@@ -181,6 +181,7 @@ const registerStudent = async (req, res) => {
         res.status(500).json({ errorMessage: 'Something went wrong.' });
     }
 };
+
 
 
 const sendCredentialsMail = async (firstName, lastName, email, password) => {
@@ -207,6 +208,7 @@ const sendCredentialsMail = async (firstName, lastName, email, password) => {
         throw new Error('Failed to send credentials email.');
     }
 };
+
 
 
 // Function to verify user's email
@@ -292,9 +294,20 @@ const loginUser = async (req, res) => {
             return res.status(400).json({ errorMessage: 'Please verify your email first.' });
         }
 
-        const token = jwt.sign({ userId: userDetails._id, email: userDetails.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign(
+            { userId: userDetails._id, email: userDetails.email, userType: userDetails.userType },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
 
-        res.json({ token, message: 'User logged in successfully' });
+        res.json({
+            token,
+            userId: userDetails._id,
+            email: userDetails.email,
+            userType: userDetails.userType,
+            isVerified: userDetails.isVerified,
+            message: 'Login successful',
+        });
     } catch (error) {
         console.error('Error in loginUser:', error);
         res.status(500).json({ errorMessage: 'Something went wrong' });
@@ -310,9 +323,9 @@ const loginStudent = async (req, res) => {
             return res.status(400).json({ errorMessage: 'Invalid credentials' });
         }
 
-        const userDetails = await User.findOne({ email });
+        const userDetails = await User.findOne({ email, userType: 'student' });
         if (!userDetails) {
-            return res.status(404).json({ errorMessage: 'User not found' });
+            return res.status(404).json({ errorMessage: 'Student not found' });
         }
 
         const passwordMatch = await bcrypt.compare(password, userDetails.password);
@@ -320,18 +333,32 @@ const loginStudent = async (req, res) => {
             return res.status(400).json({ errorMessage: 'Invalid credentials' });
         }
 
-        if (!userDetails.isVerified) {
+        // Skip isVerified check for students
+        if (userDetails.userType === 'student') {
+            // isVerified is bypassed
+        } else if (!userDetails.isVerified) {
             return res.status(400).json({ errorMessage: 'Please verify your email first.' });
         }
 
-        const token = jwt.sign({ userId: userDetails._id, email: userDetails.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign(
+            { userId: userDetails._id, email: userDetails.email, userType: userDetails.userType },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
 
-        res.json({ token, message: 'Student logged in successfully' });
+        res.json({
+            token,
+            userId: userDetails._id,
+            email: userDetails.email,
+            userType: userDetails.userType,
+            message: 'Student logged in successfully',
+        });
     } catch (error) {
         console.error('Error in loginStudent:', error);
         res.status(500).json({ errorMessage: 'Something went wrong' });
     }
 };
+
 
 
 // Add this to your backend (e.g., user.js controller)

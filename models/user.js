@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
-const mongoose=require('mongoose');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
   user_id: {
@@ -27,7 +28,7 @@ const userSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: function () {
-      return this.userType !== 'student';
+      return this.userType === 'student'; // Defaults to true if userType is 'student'
     }
   },
   otpVerifiedAt: {
@@ -35,7 +36,7 @@ const userSchema = new mongoose.Schema({
   },
   userType: {
     type: String,
-    enum: ['admin', 'user'],
+    enum: ['admin', 'student'],
     default: 'admin'
   },
   otp: {
@@ -47,14 +48,17 @@ const userSchema = new mongoose.Schema({
   otpResendTime: {
     type: Date,
     default: null
-},
-otpVerifiedAt: {
-    type: Date,
-    default: null
-}
+  }
 }, {
   timestamps: true
 });
 
+// Hash password before saving
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
 
 module.exports = mongoose.model('User', userSchema);
