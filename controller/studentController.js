@@ -58,8 +58,13 @@ exports.addStudent = async (req, res) => {
             enrollmentDate,
             courseName,
             academicLevel,
+<<<<<<< Updated upstream
             studentAvatar
            
+=======
+            studentAvatar,
+            isVerified: true // Skip verification and set as verified
+>>>>>>> Stashed changes
         });
 
         await newStudent.save();
@@ -132,6 +137,7 @@ exports.addStudent = async (req, res) => {
         }
     };
 };
+<<<<<<< Updated upstream
 exports.getAllStudents = async (req, res) => {
     try {
         const students = await Student.find(); // Retrieve all students from the database
@@ -140,6 +146,9 @@ exports.getAllStudents = async (req, res) => {
         res.status(500).json({ message: error.message }); // Handle errors
     }
 };
+=======
+
+>>>>>>> Stashed changes
 exports.enrollStudent = async (req, res) => {
     const { studentId, courseId } = req.body;
 

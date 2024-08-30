@@ -71,7 +71,7 @@ const studentSchema = new mongoose.Schema({
     },
     studentAvatar: {
         type: String,
-      
+
     },
     courses: [{
         type: mongoose.Schema.Types.ObjectId,
