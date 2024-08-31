@@ -79,6 +79,7 @@ const registerUser = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log(hashedPassword);
 
         const userData = new User({
             firstName,
@@ -277,7 +278,7 @@ const loginUser = async (req, res) => {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({ errorMessage: 'Invalid credentials' });
+            return res.status(400).json({ errorMessage: 'Email and password are required' });
         }
 
         const userDetails = await User.findOne({ email });
@@ -285,9 +286,19 @@ const loginUser = async (req, res) => {
             return res.status(404).json({ errorMessage: 'User not found' });
         }
 
+        console.log('Stored Hashed Password:', userDetails.password);
+
         const passwordMatch = await bcrypt.compare(password, userDetails.password);
+
+        // Log the details for debugging
+        console.log({
+            inputPassword: password,
+            storedHashedPassword: userDetails.password,
+            passwordMatch
+        });
+
         if (!passwordMatch) {
-            return res.status(400).json({ errorMessage: 'Invalid credentials' });
+            return res.status(400).json({ errorMessage: 'Invalid password' });
         }
 
         if (!userDetails.isVerified) {
