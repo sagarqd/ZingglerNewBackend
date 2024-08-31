@@ -1,9 +1,11 @@
 const User=require('../models/user');
+const EnrolledStudents = require('../models/enrolledstudents');
 const Student = require('../models/student');
 const Course = require('../models/course');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const { v4: uuidv4 } = require('uuid');
 
 // Configure Nodemailer
 const transporter = nodemailer.createTransport({
@@ -58,13 +60,7 @@ exports.addStudent = async (req, res) => {
             enrollmentDate,
             courseName,
             academicLevel,
-<<<<<<< Updated upstream
             studentAvatar
-           
-=======
-            studentAvatar,
-            isVerified: true // Skip verification and set as verified
->>>>>>> Stashed changes
         });
 
         await newStudent.save();
@@ -145,24 +141,51 @@ exports.getAllStudents = async (req, res) => {
         res.status(500).json({ message: error.message }); // Handle errors
     }
 };
+
 exports.enrollStudent = async (req, res) => {
     const { studentId, courseId } = req.body;
 
     try {
+        // Fetch the student by studentId
         const student = await Student.findOne({ student_id: studentId });
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        const course = await Course.findOne({ courseId });
+        // Fetch the course by courseId
+        const course = await Course.findOne({ _id: courseId });
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        course.enrolledStudents.push(studentId);
-        await course.save();
+        // Fetch the logged-in admin's userType from the database
+        const adminUser = await User.findById(req.user.userId); // Assuming req.user contains the logged-in user's info
+        if (!adminUser || adminUser.userType !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized action' });
+        }
 
-        res.status(200).json({ message: 'Student enrolled successfully' });
+        // Create a new enrolled student entry
+        const newEnrollment = new EnrolledStudents({
+            studentId,
+            courseId,
+            enrolledBy: adminUser.userType, // Admin's userType
+            enrollmentId: uuidv4(), // Generate a unique enrollmentId
+            enrolledId: uuidv4(), // Generate a unique enrolledId
+            enrollmentDate: new Date(), // Current date and time
+        });
+
+        // Save the enrollment entry to the database
+        const savedEnrollment = await newEnrollment.save();
+
+        // Log the enrollment details
+        console.log('Enrollment ID:', savedEnrollment.enrollmentId);
+        console.log('Enrolled ID:', savedEnrollment.enrolledId);
+        console.log('Student ID:', savedEnrollment.studentId);
+        console.log('Course ID:', savedEnrollment.courseId);
+        console.log('Enrolled By:', savedEnrollment.enrolledBy);
+        console.log('Enrollment Date:', savedEnrollment.enrollmentDate);
+
+        res.status(200).json({ message: 'Student enrolled successfully', enrollment: savedEnrollment });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
