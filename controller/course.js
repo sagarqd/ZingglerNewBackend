@@ -94,6 +94,24 @@ async function getCourseBySlug(req,res){
   }
 }
 
+// Get all courses created by the current user
+exports.getMyCourses = async (req, res) => {
+  try {
+      // Fetch all courses where createdBy matches the current user's ID
+      const myCourses = await Course.find({ createdBy: req.userId });
+
+      // Check if courses were found
+      if (myCourses.length === 0) {
+          return res.status(404).json({ message: 'No courses found for this user.' });
+      }
+
+      // Return the list of courses
+      res.status(200).json(myCourses);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+};
+
 
 // UPDATE a course by ID with file handling
 const updateCourseById = async (req, res) => {

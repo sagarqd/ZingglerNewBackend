@@ -88,7 +88,11 @@ const courseSchema = mongoose.Schema(
     enrolledStudents: {
       type: [String],  // Array of student IDs (as strings)
       default: [],     // Default to an empty array
-    }
+    },
+    createdBy:{
+      type: String,
+      default: uuidv4,
+     }
   },
   {
     timestamps: true, // Add timestamp fields automatically
