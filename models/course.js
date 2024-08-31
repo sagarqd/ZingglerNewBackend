@@ -91,7 +91,6 @@ const courseSchema = mongoose.Schema(
     },
     createdBy:{
       type: String,
-      default: uuidv4,
      }
   },
   {

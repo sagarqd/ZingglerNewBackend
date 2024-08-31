@@ -1,7 +1,7 @@
 const Course = require("../models/course"); // Assuming your model is defined in models/course.js
 const upload = require("../middlewares/multerConfig");
 const slugify = require('slugify');
-
+const User= require('../models/user');
 
 // CREATE a new course
 async function createCourse(req, res) {
@@ -28,7 +28,8 @@ async function createCourse(req, res) {
           courseVideo: videoFile,
         },
       },
-      slug: slugify(req.body.general.courseInformation.courseFullName, { lower: true, strict: true })
+      slug: slugify(req.body.general.courseInformation.courseFullName, { lower: true, strict: true }),
+      createdBy: req.user.user_id,
     };
 
     let status = determineStatus(courseData);
@@ -95,7 +96,7 @@ async function getCourseBySlug(req,res){
 }
 
 // Get all courses created by the current user
-exports.getMyCourses = async (req, res) => {
+const getMyCourses = async (req, res) => {
   try {
       // Fetch all courses where createdBy matches the current user's ID
       const myCourses = await Course.find({ createdBy: req.userId });
@@ -300,5 +301,6 @@ module.exports = {
   updateCourseById,
   deleteCourseById,
   getCourseBySlug,
-  getNoOfSections
+  getNoOfSections,
+  getMyCourses
 };
