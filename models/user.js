@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
-const mongoose=require('mongoose');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
   user_id: {
@@ -26,14 +27,16 @@ const userSchema = new mongoose.Schema({
   },
   isVerified: {
     type: Boolean,
-    default: false
+    default: function () {
+      return this.userType === 'student'; // Defaults to true if userType is 'student'
+    }
   },
   otpVerifiedAt: {
     type: Date
   },
   userType: {
     type: String,
-    enum: ['admin', 'user'],
+    enum: ['admin', 'student'],
     default: 'admin'
   },
   otp: {
@@ -45,11 +48,7 @@ const userSchema = new mongoose.Schema({
   otpResendTime: {
     type: Date,
     default: null
-},
-otpVerifiedAt: {
-    type: Date,
-    default: null
-}
+  }
 }, {
   timestamps: true
 });

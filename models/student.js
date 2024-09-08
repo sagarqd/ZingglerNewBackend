@@ -1,11 +1,10 @@
-const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
     student_id: {
         type: String,
+        ref: 'User',
         unique: true,
-        default: uuidv4 // Generates a unique ID for each new document
     },
     fullName: {
         type: String,
@@ -58,7 +57,7 @@ const studentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    enollmentDate: {
+    enrollmentDate: {  // Corrected field name
         type: Date,
         required: true
     },
@@ -72,15 +71,14 @@ const studentSchema = new mongoose.Schema({
     },
     studentAvatar: {
         type: String,
-        required: true
+
     },
-    userType: {
-        type: String,
-        enum: ['admin', 'student'],
-        default: 'student'
-    },
+    courses: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course'
+    }],
 }, {
-    timestamps: true
+  timestamps: true
 });
 
 module.exports = mongoose.model('Student', studentSchema);

@@ -1,7 +1,7 @@
 const Course = require("../models/course"); // Assuming your model is defined in models/course.js
 const upload = require("../middlewares/multerConfig");
 const slugify = require('slugify');
-
+const User= require('../models/user');
 
 // CREATE a new course
 async function createCourse(req, res) {
@@ -28,7 +28,8 @@ async function createCourse(req, res) {
           courseVideo: videoFile,
         },
       },
-      slug: slugify(req.body.general.courseInformation.courseFullName, { lower: true, strict: true })
+      slug: slugify(req.body.general.courseInformation.courseFullName, { lower: true, strict: true }),
+      createdBy: req.user.user_id,
     };
 
     let status = determineStatus(courseData);
@@ -94,6 +95,24 @@ async function getCourseBySlug(req,res){
   }
 }
 
+// Get all courses created by the current user
+const getMyCourses = async (req, res) => {
+  try {
+      // Fetch all courses where createdBy matches the current user's ID
+      const myCourses = await Course.find({ createdBy: req.userId });
+
+      // Check if courses were found
+      if (myCourses.length === 0) {
+          return res.status(404).json({ message: 'No courses found for this user.' });
+      }
+
+      // Return the list of courses
+      res.status(200).json(myCourses);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+};
+
 
 // UPDATE a course by ID with file handling
 const updateCourseById = async (req, res) => {
@@ -109,10 +128,53 @@ const updateCourseById = async (req, res) => {
 
     const description = req.body.description ? JSON.parse(req.body.description) : {};
 
-    const { hiddenSection, courseLayout, courseSection, typeOfActivity, noOfSection } = req.body;
-    const { theme, showReportActivity, showGradeBook, language, showActivityDates, noOfAnnouncement } = req.body;
-    const { enableCompletionTracking, showActivityCompletionConditions } = req.body;
-    const { groupMode, forcedGroupMode, tags, numberOfAnnouncement } = req.body;
+    const { 
+      hiddenSection, 
+      courseLayout, 
+      courseSection, 
+      typeOfActivity, 
+      noOfSection 
+    } = req.body;
+
+    const { 
+      theme, 
+      showReportActivity, 
+      showGradeBook, 
+      language, 
+      showActivityDates, 
+      noOfAnnouncement 
+    } = req.body;
+
+    const { 
+      enableCompletionTracking, 
+      showActivityCompletionConditions 
+    } = req.body;
+
+    const { 
+      groupMode, 
+      forcedGroupMode, 
+      tags, 
+      numberOfAnnouncement 
+    } = req.body;
+
+    // Handle courseSections
+    let courseSections = [];
+    if (req.body.courseSections) {
+      try {
+        courseSections = JSON.parse(req.body.courseSections);
+      } catch (error) {
+        console.error("Error parsing courseSections:", error.message);
+        return res.status(400).json({ message: "Invalid courseSections format" });
+      }
+    } else {
+      // If courseSections is not provided, use the existing one
+      const existingCourse = await Course.findById(req.params.id);
+      if (!existingCourse) {
+        console.log('Course not found with ID:', req.params.id);
+        return res.status(404).json({ message: 'Course not found' });
+      }
+      courseSections = existingCourse.courseSections || [];
+    }
 
     const status = req.body.isFinal === 'true' ? 'completed' : determineStatus(req.body);
 
@@ -157,6 +219,7 @@ const updateCourseById = async (req, res) => {
           courseVideo: videoFile || existingCourse.description?.thumbnail?.courseVideo,
         }
       },
+      courseSections: courseSections, // Update courseSections
       status // Update the status
     };
 
@@ -238,5 +301,6 @@ module.exports = {
   updateCourseById,
   deleteCourseById,
   getCourseBySlug,
-  getNoOfSections
+  getNoOfSections,
+  getMyCourses
 };

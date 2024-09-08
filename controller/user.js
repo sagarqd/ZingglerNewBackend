@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const User = require('../models/user');
+const Student = require('../models/student');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
@@ -16,7 +17,7 @@ const smtp = nodemailer.createTransport({
         user: process.env.SMTP_USER, // Your SMTP username from .env
         pass: "Test1234@*#"  // Your SMTP password from .env
     }
-});  
+});
 
 const sendVerifymail = async (firstName, lastName, email, user_id) => {
     try {
@@ -78,6 +79,7 @@ const registerUser = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log(hashedPassword);
 
         const userData = new User({
             firstName,
@@ -90,16 +92,125 @@ const registerUser = async (req, res) => {
 
         await userData.save();
 
-        const token = jwt.sign({ userId: userData._id, email: userData.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: userData._id, email: userData.email, userType: userData.userType }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         await sendVerifymail(firstName, lastName, email, userData._id);
 
-        res.json({ token, message: 'User registered successfully. Verification email sent.' });
+        res.json({ token, userType: userData.userType, message: 'User registered successfully. Verification email sent.' });
     } catch (error) {
         console.error('Error in registerUser:', error);
         res.status(500).json({ errorMessage: 'Something went wrong.' });
     }
 };
+
+// Function to register a new student
+const registerStudent = async (req, res) => {
+    try {
+        const {
+            fullName,
+            gender,
+            userName,
+            dateOfBirth,
+            contactNumber,
+            email,
+            emergencyContact,
+            address,
+            matriculation,
+            intermediate,
+            bachelorDegree,
+            enrollmentDate,
+            courseName,
+            academicLevel,
+            studentAvatar,
+            password
+        } = req.body;
+
+        if (!fullName || !gender || !userName || !dateOfBirth || !contactNumber || !email || !emergencyContact || !address || !matriculation || !intermediate || !bachelorDegree || !enrollmentDate || !courseName || !academicLevel || !password) {
+            return res.status(400).json({ errorMessage: 'All fields are required.' });
+        }
+
+        // Check if email already exists in User model
+        const isExistingUser = await User.findOne({ email });
+        if (isExistingUser) {
+            return res.status(400).json({ errorMessage: 'Email already exists.' });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Save user data
+        const userData = new User({
+            firstName: fullName.split(' ')[0],
+            lastName: fullName.split(' ').slice(1).join(' '),
+            email,
+            password: hashedPassword,
+            userType: 'student',
+            isVerified: true, // Skip verification for students
+        });
+
+        await userData.save();
+
+        // Save student data
+        const studentData = new Student({
+            student_id: userData._id,
+            fullName,
+            gender,
+            userName,
+            dateOfBirth,
+            contactNumber,
+            email,
+            emergencyNumber: emergencyContact,
+            address,
+            matriculation,
+            intermediate,
+            bachelorDegree,
+            enrollmentDate,
+            courseName,
+            academicLevel,
+            studentAvatar,
+            userType: 'student',
+        });
+
+        await studentData.save();
+
+        // Send credentials email
+        await sendCredentialsMail(fullName, email, password);
+
+        res.json({ message: 'Student registered successfully. Credentials have been sent to the email.' });
+    } catch (error) {
+        console.error('Error in registerStudent:', error);
+        res.status(500).json({ errorMessage: 'Something went wrong.' });
+    }
+};
+
+
+
+const sendCredentialsMail = async (firstName, lastName, email, password) => {
+    try {
+        const templatePath = path.join(__dirname, '../views/emailTemplates/credentialsEmail.html');
+        const emailTemplate = fs.readFileSync(templatePath, 'utf-8');
+
+        const formattedEmail = emailTemplate.replace(/{{ firstName }}/g, firstName)
+                                            .replace(/{{ lastName }}/g, lastName)
+                                            .replace(/{{ email }}/g, email)
+                                            .replace(/{{ password }}/g, password);
+
+        const mailOptions = {
+            from: 'noreply@infutech.in',
+            to: email,
+            subject: 'Your Credentials',
+            html: formattedEmail
+        };
+
+        await smtp.sendMail(mailOptions);
+        console.log('Credentials email sent');
+    } catch (error) {
+        console.error('Error sending credentials email:', error);
+        throw new Error('Failed to send credentials email.');
+    }
+};
+
+
 
 // Function to verify user's email
 const verifyMail = async (req, res) => {
@@ -167,7 +278,7 @@ const loginUser = async (req, res) => {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({ errorMessage: 'Invalid credentials' });
+            return res.status(400).json({ errorMessage: 'Email and password are required' });
         }
 
         const userDetails = await User.findOne({ email });
@@ -175,23 +286,91 @@ const loginUser = async (req, res) => {
             return res.status(404).json({ errorMessage: 'User not found' });
         }
 
+        console.log('Stored Hashed Password:', userDetails.password);
+
         const passwordMatch = await bcrypt.compare(password, userDetails.password);
+
+        // Log the details for debugging
+        console.log({
+            inputPassword: password,
+            storedHashedPassword: userDetails.password,
+            passwordMatch
+        });
+
         if (!passwordMatch) {
-            return res.status(400).json({ errorMessage: 'Invalid credentials' });
+            return res.status(400).json({ errorMessage: 'Invalid password' });
         }
 
         if (!userDetails.isVerified) {
             return res.status(400).json({ errorMessage: 'Please verify your email first.' });
         }
 
-        const token = jwt.sign({ userId: userDetails._id, email: userDetails.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign(
+            { userId: userDetails._id, email: userDetails.email, userType: userDetails.userType },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
 
-        res.json({ token, message: 'User logged in successfully' });
+        res.json({
+            token,
+            userId: userDetails._id,
+            email: userDetails.email,
+            userType: userDetails.userType,
+            isVerified: userDetails.isVerified,
+            message: 'Login successful',
+        });
     } catch (error) {
         console.error('Error in loginUser:', error);
         res.status(500).json({ errorMessage: 'Something went wrong' });
     }
 };
+
+// Function to log in student
+const loginStudent = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ errorMessage: 'Invalid credentials' });
+        }
+
+        const userDetails = await User.findOne({ email, userType: 'student' });
+        if (!userDetails) {
+            return res.status(404).json({ errorMessage: 'Student not found' });
+        }
+
+        const passwordMatch = await bcrypt.compare(password, userDetails.password);
+        if (!passwordMatch) {
+            return res.status(400).json({ errorMessage: 'Invalid credentials' });
+        }
+
+        // Skip isVerified check for students
+        if (userDetails.userType === 'student') {
+            // isVerified is bypassed
+        } else if (!userDetails.isVerified) {
+            return res.status(400).json({ errorMessage: 'Please verify your email first.' });
+        }
+
+        const token = jwt.sign(
+            { userId: userDetails._id, email: userDetails.email, userType: userDetails.userType },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.json({
+            token,
+            userId: userDetails._id,
+            email: userDetails.email,
+            userType: userDetails.userType,
+            message: 'Student logged in successfully',
+        });
+    } catch (error) {
+        console.error('Error in loginStudent:', error);
+        res.status(500).json({ errorMessage: 'Something went wrong' });
+    }
+};
+
+
 
 // Add this to your backend (e.g., user.js controller)
 const getUserDetails = async (req, res) => {
@@ -209,4 +388,4 @@ const getUserDetails = async (req, res) => {
 };
 
 
-module.exports = { registerUser, loginUser, verifyMail, resendOTP, getUserDetails };
+module.exports = { registerUser, registerStudent, loginUser, loginStudent, verifyMail, resendOTP, getUserDetails };

@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { registerStudent } = require('../controller/studentController');
+const upload=require('../middlewares/multerConfig')
+const studentController = require('../controller/studentController');
 
-router.post('/register', registerStudent);
+router.post('/add-student', upload.single('studentAvatar'), studentController.addStudent);
+router.post('/enroll',studentController.enrollStudent);
+router.get('/student-list', studentController.getAllStudents);
+
 
 module.exports = router;

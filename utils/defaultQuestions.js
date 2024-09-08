@@ -5,24 +5,24 @@ const dotenv = require('dotenv');
 // Define the default questions
 const defaultQuestions = [
   {
-    "question": "Which of the following are prime numbers?",
+    "questionText": "Which of the following are prime numbers?",
     "options": ["2", "4", "6", "7"],
-    "correctAnswers": ["2", "7"],
-    "type": "multiple-choice",
+    "correctAnswer": ["2", "7"],
+    "type": "multipleChoice",
     "isDefault": true,
   },
   {
-    "question": "Is this software available on mobile platforms?",
+    "questionText": "Is this software available on mobile platforms?",
     "options": [],
-    "correctAnswers": ["true"], // Assuming the correct answer is "true"
+    "correctAnswer": ["true"], // Assuming the correct answer is "true"
     "type": "true/false",
     "isDefault": true
   },
   {
-    "question": "What is the primary purpose of this software?",
+    "questionText": "What is the primary purpose of this software?",
     "options": [],
-    "correctAnswers": ["To demonstrate functionality"], // Example one-line answer
-    "type": "one-line",
+    "correctAnswer": ["To demonstrate functionality"], // Example one-line answer
+    "type": "oneLine",
     "isDefault": true
   },
 
@@ -37,12 +37,12 @@ async function addDefaultQuestions() {
         .catch((error) => console.log('DB unable to connect', error));
 
     for (const dq of defaultQuestions) {
-      const existingQuestion = await Question.findOne({ question: dq.question, isDefault: true });
+      const existingQuestion = await Question.findOne({ question: dq.questionText, isDefault: true });
       if (!existingQuestion) {
         await new Question(dq).save();
-        console.log(`Added default question: "${dq.question}"`);
+        console.log(`Added default question: "${dq.questionText}"`);
       } else {
-        console.log(`Default question already exists: "${dq.question}"`);
+        console.log(`Default question already exists: "${dq.questionText}"`);
       }
     }
 

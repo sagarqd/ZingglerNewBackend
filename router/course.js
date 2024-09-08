@@ -23,4 +23,6 @@ router.get('/courses/:id/sections', courseController.getNoOfSections);
 // Optional: If you still need the route to fetch a course by its ID but with a different URL pattern
 router.get('/coursesById/:id', courseController.getCourseById);
 
+router.get('/my-course', courseController.getMyCourses);
+
 module.exports = router;

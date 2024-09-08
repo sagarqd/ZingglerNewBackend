@@ -49,11 +49,13 @@ const courseSchema = mongoose.Schema(
       },
       noOfSection: { type: Number, default: 0 },
     },
-    courseSections:{
-      sectionTitle: {type: String},
-      contentType:{type: String},
-      blogUrl:{type: String},
-    },
+    courseSections: [
+      {
+        sectionTitle: { type: String, required: true }, // Set sectionTitle as required
+        contentType: { type: String },
+        // blogUrl: { type: String },
+      },
+    ],
     appearance: {
       theme: {
         type: String,
@@ -83,6 +85,13 @@ const courseSchema = mongoose.Schema(
       enum: ["draft", "completed"],
       default: "draft", // Default to draft if not specified
     },
+    enrolledStudents: {
+      type: [String],  // Array of student IDs (as strings)
+      default: [],     // Default to an empty array
+    },
+    createdBy:{
+      type: String,
+     }
   },
   {
     timestamps: true, // Add timestamp fields automatically
