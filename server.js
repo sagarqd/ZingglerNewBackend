@@ -1,68 +1,71 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const dotenv = require('dotenv');
-const mongoose = require('mongoose');
+const dotenv = require("dotenv");
+const mongoose = require("mongoose");
 const http = require("http");
 const { Server } = require("socket.io");
-const cors = require('cors');
-const path = require('path');
+const cors = require("cors");
+const path = require("path");
 
 // Import routes
-const authRoute = require('./router/auth');
-const profileRoute = require('./router/profile');
-const groupRoute = require('./router/group');
-const courseRoute = require('./router/course');
-const resetPassword = require('./router/passwordRoutes');
-const videoRoute = require('./router/videoRoutes');
-const studentRoute = require('./router/studentRoutes');
+const authRoute = require("./router/auth");
+const profileRoute = require("./router/profile");
+const groupRoute = require("./router/group");
+const courseRoute = require("./router/course");
+const resetPassword = require("./router/passwordRoutes");
+const videoRoute = require("./router/videoRoutes");
+const studentRoute = require("./router/studentRoutes");
 // Import Course model
-const Course = require('./models/course');
+const Course = require("./models/course");
 
 // Load environment variables
 dotenv.config();
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URL)
-  .then(() => console.log('DB connected Successfully'))
-  .catch((error) => console.log('DB unable to connect', error));
+mongoose
+  .connect(process.env.MONGODB_URL)
+  .then(() => console.log("DB connected Successfully"))
+  .catch((error) => console.log("DB unable to connect", error));
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
-app.get('/', (req, res) => {
-  res.send('Welcome to Express!');
+app.get("/", (req, res) => {
+  res.send("Welcome to Express!");
 });
 
 // Course route
-app.get('/api/courses/:slug', async (req, res) => {
-    const { slug } = req.params;
-    try {
-      const course = await Course.findOne({ slug }).exec();
-      if (course) {
-        res.json({
-          courseFullName: course.general?.courseInformation?.courseFullName || 'Not available',
-          courseVideo: course.description?.thumbnail?.courseVideo || 'Not available',
-        });
-      } else {
-        res.status(404).json({ message: 'Course not found' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: 'Server error', error: error.message });
+app.get("/api/courses/:slug", async (req, res) => {
+  const { slug } = req.params;
+  try {
+    const course = await Course.findOne({ slug }).exec();
+    if (course) {
+      res.json({
+        courseFullName:
+          course.general?.courseInformation?.courseFullName || "Not available",
+        courseVideo:
+          course.description?.thumbnail?.courseVideo || "Not available",
+      });
+    } else {
+      res.status(404).json({ message: "Course not found" });
     }
-  });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 
 // Use route files
-app.use('/api/auth', authRoute);
-app.use('/api', profileRoute);
-app.use('/api', groupRoute);
-app.use('/api', courseRoute);
-app.use('/api', resetPassword);
-app.use('/api/video', videoRoute);
-app.use('/api/student', studentRoute);
+app.use("/api/auth", authRoute);
+app.use("/api", profileRoute);
+app.use("/api", groupRoute);
+app.use("/api", courseRoute);
+app.use("/api", resetPassword);
+app.use("/api/video", videoRoute);
+app.use("/api/student", studentRoute);
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -84,39 +87,42 @@ io.on("connection", (socket) => {
   console.log(`Socket Connected: ${socket.id}`);
 
   socket.on("room:join", (data) => {
-      const { email, room } = data;
+    const { email, roomID } = data;
 
-      emailToSocketIdMap.set(email, socket.id);
-      socketidToEmailMap.set(socket.id, email);
+    emailToSocketIdMap.set(email, socket.id);
+    socketidToEmailMap.set(socket.id, email);
 
-      if (!roomToParticipantsMap.has(room)) {
-          roomToParticipantsMap.set(room, new Set());
-      }
+    if (!roomToParticipantsMap.has(roomID)) {
+      roomToParticipantsMap.set(roomID, new Set());
+    }
 
-      roomToParticipantsMap.get(room).add(email);
-      socket.join(room);
+    roomToParticipantsMap.get(roomID).add(email);
+    socket.join(roomID);
 
-      io.to(room).emit("user:joined", { email, id: socket.id });
-      io.to(room).emit("update:participants", Array.from(roomToParticipantsMap.get(room)));
-      io.to(socket.id).emit("room:join", data);
+    io.to(roomID).emit("user:joined", { email, id: socket.id });
+    io.to(roomID).emit(
+      "update:participants",
+      Array.from(roomToParticipantsMap.get(roomID))
+    );
+    io.to(socket.id).emit("room:join", data);
   });
 
   socket.on("disconnect", () => {
-      const email = socketidToEmailMap.get(socket.id);
-      socketidToEmailMap.delete(socket.id);
+    const email = socketidToEmailMap.get(socket.id);
+    socketidToEmailMap.delete(socket.id);
 
-      for (const [room, participants] of roomToParticipantsMap.entries()) {
-          if (participants.has(email)) {
-              participants.delete(email);
-              io.to(room).emit("update:participants", Array.from(participants));
-              if (participants.size === 0) {
-                  roomToParticipantsMap.delete(room);
-              }
-              break;
-          }
+    for (const [roroomIDom, participants] of roomToParticipantsMap.entries()) {
+      if (participants.has(email)) {
+        participants.delete(email);
+        io.to(roomID).emit("update:participants", Array.from(participants));
+        if (participants.size === 0) {
+          roomToParticipantsMap.delete(roomID);
+        }
+        break;
       }
+    }
 
-      console.log(`Socket Disconnected: ${socket.id}`);
+    console.log(`Socket Disconnected: ${socket.id}`);
   });
 });
 

@@ -1,4 +1,4 @@
-const Course = require("../models/course"); // Assuming your model is defined in models/course.js
+const Course = require("../models/course");
 const upload = require("../middlewares/multerConfig");
 const slugify = require('slugify');
 const User= require('../models/user');
@@ -29,7 +29,7 @@ async function createCourse(req, res) {
         },
       },
       slug: slugify(req.body.general.courseInformation.courseFullName, { lower: true, strict: true }),
-      createdBy: req.user.user_id,
+      createdBy: req.body.createdBy,
     };
 
     let status = determineStatus(courseData);
@@ -99,12 +99,7 @@ async function getCourseBySlug(req,res){
 const getMyCourses = async (req, res) => {
   try {
       // Fetch all courses where createdBy matches the current user's ID
-      const myCourses = await Course.find({ createdBy: req.userId });
-
-      // Check if courses were found
-      if (myCourses.length === 0) {
-          return res.status(404).json({ message: 'No courses found for this user.' });
-      }
+      const myCourses = await Course.find({ createdBy: req.body.userId });
 
       // Return the list of courses
       res.status(200).json(myCourses);
@@ -128,33 +123,33 @@ const updateCourseById = async (req, res) => {
 
     const description = req.body.description ? JSON.parse(req.body.description) : {};
 
-    const { 
-      hiddenSection, 
-      courseLayout, 
-      courseSection, 
-      typeOfActivity, 
-      noOfSection 
+    const {
+      hiddenSection,
+      courseLayout,
+      courseSection,
+      typeOfActivity,
+      noOfSection
     } = req.body;
 
-    const { 
-      theme, 
-      showReportActivity, 
-      showGradeBook, 
-      language, 
-      showActivityDates, 
-      noOfAnnouncement 
+    const {
+      theme,
+      showReportActivity,
+      showGradeBook,
+      language,
+      showActivityDates,
+      noOfAnnouncement
     } = req.body;
 
-    const { 
-      enableCompletionTracking, 
-      showActivityCompletionConditions 
+    const {
+      enableCompletionTracking,
+      showActivityCompletionConditions
     } = req.body;
 
-    const { 
-      groupMode, 
-      forcedGroupMode, 
-      tags, 
-      numberOfAnnouncement 
+    const {
+      groupMode,
+      forcedGroupMode,
+      tags,
+      numberOfAnnouncement
     } = req.body;
 
     // Handle courseSections

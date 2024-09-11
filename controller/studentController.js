@@ -144,46 +144,35 @@ exports.getAllStudents = async (req, res) => {
 
 exports.enrollStudent = async (req, res) => {
     const { studentId, courseId } = req.body;
+    console.log('Student ID:', studentId); // Log the student ID received
 
     try {
-        // Fetch the student by studentId
         const student = await Student.findOne({ student_id: studentId });
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        // Fetch the course by courseId
         const course = await Course.findOne({ _id: courseId });
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        // Fetch the logged-in admin's userType from the database
-        const adminUser = await User.findById(req.user.userId); // Assuming req.user contains the logged-in user's info
+        const adminUser = await User.findById(req.user.userId);
         if (!adminUser || adminUser.userType !== 'admin') {
             return res.status(403).json({ message: 'Unauthorized action' });
         }
 
-        // Create a new enrolled student entry
         const newEnrollment = new EnrolledStudents({
             studentId,
             courseId,
-            enrolledBy: adminUser.userType, // Admin's userType
-            enrollmentId: uuidv4(), // Generate a unique enrollmentId
-            enrolledId: uuidv4(), // Generate a unique enrolledId
-            enrollmentDate: new Date(), // Current date and time
+            enrolledBy: adminUser.userType,
+            enrollmentId: uuidv4(),
+            enrolledId: uuidv4(),
+            enrollmentDate: new Date(),
         });
 
-        // Save the enrollment entry to the database
         const savedEnrollment = await newEnrollment.save();
-
-        // Log the enrollment details
-        console.log('Enrollment ID:', savedEnrollment.enrollmentId);
-        console.log('Enrolled ID:', savedEnrollment.enrolledId);
-        console.log('Student ID:', savedEnrollment.studentId);
-        console.log('Course ID:', savedEnrollment.courseId);
-        console.log('Enrolled By:', savedEnrollment.enrolledBy);
-        console.log('Enrollment Date:', savedEnrollment.enrollmentDate);
+        console.log('Enrollment details:', savedEnrollment);
 
         res.status(200).json({ message: 'Student enrolled successfully', enrollment: savedEnrollment });
     } catch (error) {

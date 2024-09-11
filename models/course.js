@@ -44,8 +44,8 @@ const courseSchema = mongoose.Schema(
       courseSection: {
         type: String,
       },
-      typeOfActivity:{
-        type:String
+      typeOfActivity: {
+        type: String,
       },
       noOfSection: { type: Number, default: 0 },
     },
@@ -86,12 +86,12 @@ const courseSchema = mongoose.Schema(
       default: "draft", // Default to draft if not specified
     },
     enrolledStudents: {
-      type: [String],  // Array of student IDs (as strings)
-      default: [],     // Default to an empty array
+      type: [String], // Array of student IDs (as strings)
+      default: [], // Default to an empty array
     },
-    createdBy:{
+    createdBy: {
       type: String,
-     }
+    },
   },
   {
     timestamps: true, // Add timestamp fields automatically
@@ -129,8 +129,8 @@ courseSchema.pre("save", async function (next) {
 
   if (allRequiredFieldsPresent) {
     this.status = "completed";
-  }else {
-    console.log('Status is draft. Missing required fields.');
+  } else {
+    console.log("Status is draft. Missing required fields.");
   }
 
   next();
