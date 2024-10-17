@@ -6,16 +6,18 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const otplib = require('otplib');
+const { log } = require('console');
 require('dotenv').config();
 
 // Configure the SMTP transporter
 const smtp = nodemailer.createTransport({
-    host: 'smtp.hostinger.com',
+    // host: 'smtp.hostinger.com',
+    host: 'smtp.gmail.com',
     port: 465,
     secure: true,
     auth: {
-        user: process.env.SMTP_USER, // Your SMTP username from .env
-        pass: "Test1234@*#"  // Your SMTP password from .env
+        user: "sharmaalok041993@gmail.com", // Your SMTP username from .env
+        pass: "oqam tbug qtgr uqgw"  // Your SMTP password from .env
     }
 });
 
@@ -34,6 +36,7 @@ const sendVerifymail = async (firstName, lastName, email, user_id) => {
 
         const otp = otplib.authenticator.generate(process.env.OTP_SECRET);
         const otpExpiration = Date.now() + 10 * 60 * 1000;
+        console.log(otp)
 
         user.otp = otp;
         user.otpExpiration = otpExpiration;
@@ -67,7 +70,8 @@ const sendVerifymail = async (firstName, lastName, email, user_id) => {
 // Function to register a new user
 const registerUser = async (req, res) => {
     try {
-        const { firstName, lastName, email, password } = req.body;
+        const { firstName, lastName, email, password } = req.body
+        log(req.body)
 
         if (!firstName || !lastName || !email || !password) {
             return res.status(400).json({ errorMessage: 'Invalid credentials.' });
@@ -93,8 +97,11 @@ const registerUser = async (req, res) => {
         await userData.save();
 
         const token = jwt.sign({ userId: userData._id, email: userData.email, userType: userData.userType }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        console.log("deformr send mail")
 
         await sendVerifymail(firstName, lastName, email, userData._id);
+
+        console.log("after send mail")
 
         res.json({ token, userType: userData.userType, message: 'User registered successfully. Verification email sent.' });
     } catch (error) {

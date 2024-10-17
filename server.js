@@ -15,6 +15,7 @@ const courseRoute = require("./router/course");
 const resetPassword = require("./router/passwordRoutes");
 const videoRoute = require("./router/videoRoutes");
 const studentRoute = require("./router/studentRoutes");
+const teacherRoute = require("./router/teacherRoutes");
 // Import Course model
 const Course = require("./models/course");
 
@@ -58,6 +59,8 @@ app.get("/api/courses/:slug", async (req, res) => {
   }
 });
 
+//
+
 // Use route files
 app.use("/api/auth", authRoute);
 app.use("/api", profileRoute);
@@ -66,6 +69,7 @@ app.use("/api", courseRoute);
 app.use("/api", resetPassword);
 app.use("/api/video", videoRoute);
 app.use("/api/student", studentRoute);
+app.use("/api/teacher", teacherRoute)
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -73,7 +77,7 @@ const server = http.createServer(app);
 // Initialize Socket.IO with the HTTP server
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3001","http://localhost:3000"],
     methods: ["GET", "POST"],
   },
 });
