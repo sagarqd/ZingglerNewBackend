@@ -14,7 +14,7 @@ const teacherSchema = new mongoose.Schema({
     },
     lastName: {
         type: String,
-        required: true
+        required: false
     },
     email: {
         type: String,
@@ -40,21 +40,26 @@ const teacherSchema = new mongoose.Schema({
     gender:{
         type: String,
         required: true
-    }
+    },
+    profilePic:{
+        type:String,
+        required:false
+        }
+
 });
 
 // Pre-save hook to hash password before saving it to the database
-// teacherSchema.pre('save', async function (next) {
-//     try {
-//         if (!this.isModified('password')) return next(); // Only hash if password is new or modified
+teacherSchema.pre('save', async function (next) {
+    try {
+        if (!this.isModified('password')) return next(); // Only hash if password is new or modified
 
-//         // Generate salt and hash the password
-//         const salt = await bcrypt.genSalt(10);
-//         this.password = await bcrypt.hash(this.password, salt);
-//         next();
-//     } catch (error) {
-//         return next(error);
-//     }
-// });
+        // Generate salt and hash the password
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (error) {
+        return next(error);
+    }
+});
 
 module.exports = mongoose.model('teacher', teacherSchema);
